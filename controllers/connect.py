@@ -4,7 +4,7 @@ from flask import jsonify, abort
 
 import time
 
-from models.constants import HOSTNAME,DBNAME, PASSWORD, PORT, USER
+from models.constants import DATABASE_URL
 
 
 class Database():
@@ -16,21 +16,7 @@ class Database():
         """
         initialise database connection
         """
-        credentials = """
-        user='{user}'
-        dbname='{dbname}'
-        password='{password}'
-        port={port}
-        host='{hostname}'
-        """.format(
-            dbname=DBNAME,
-            hostname=HOSTNAME,
-            port=PORT,
-            user=USER,
-            password=PASSWORD
-            )
-
-        connection = psycopg2.connect(credentials)
+        connection = psycopg2.connect(DATABASE_URL)
         connection.autocommit = True
         self.cursor = connection.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
         self.create_tables()
