@@ -2,7 +2,7 @@ from flask_jwt_extended import (jwt_required, get_jwt_identity)
 from flask import Blueprint, Response, request, jsonify
 from multiprocessing import Process
 
-from controllers.connect import db
+# from controllers.connect import db
 
 
 payment = Blueprint('payments', __name__)
@@ -10,7 +10,7 @@ payment = Blueprint('payments', __name__)
 class Payments():
 
     def __init__(self):
-        self.database = Database()
+        # self.database = Database()
         self.name = 'tam'
 
     @payment.route('/api/v1/payment', methods=['POST'])
