@@ -1,7 +1,10 @@
 import psycopg2
 import psycopg2.extras
 from flask import jsonify
+
 import time
+
+from models.constants import HOSTNAME,DBNAME, PASSWORD, PORT, USER
 
 
 class Database():
@@ -14,14 +17,17 @@ class Database():
         initialise database connection
         """
         credentials = """
-        user='Hotel'
-        dbname='Hotelroom'
-        password='notpassword'
-        port=5432
-        host='localhost'
+        user='{user}'
+        dbname='{dbname}'
+        password='{password}'
+        port={port}
+        host='{hostname}'
         """.format(
-            dbname='dbname',
-            hostname='hostname'
+            dbname=DBNAME,
+            hostname=HOSTNAME,
+            port=PORT,
+            user=USER,
+            password=PASSWORD
             )
 
         connection = psycopg2.connect(credentials)
