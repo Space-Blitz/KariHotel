@@ -7,7 +7,7 @@ from multiprocessing import Process
 
 from models.fields import LOGIN, REGISTER
 from controllers.validator import check_for_required_values
-# from controllers.connect import Database as db
+from controllers.connect import Database as db
 
 
 auth = Blueprint('auth', __name__)

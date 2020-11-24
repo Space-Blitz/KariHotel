@@ -2,7 +2,7 @@ from flask_jwt_extended import (jwt_required, get_jwt_identity)
 from flask import Blueprint, Response, request, jsonify
 from multiprocessing import Process
 
-# from controllers.connect import db
+from controllers.connect import db
 
 
 payment = Blueprint('payments', __name__)
