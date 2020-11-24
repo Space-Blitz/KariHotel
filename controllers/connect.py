@@ -1,6 +1,6 @@
 import psycopg2
 import psycopg2.extras
-from flask import jsonify
+from flask import jsonify, abort
 
 import time
 
@@ -154,9 +154,11 @@ class Database():
         """.format(username=username, column=column)
         db_value = self.execute_query(sql_command)
         if not db_value:
-            return False
+            abort(400, description="Invalid username or password.")
         return db_value[0][column]
     
+
+    # def create_usersaP
 
     def my_func(say):
         time.sleep(10)
