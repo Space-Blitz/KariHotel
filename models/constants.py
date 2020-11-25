@@ -1,10 +1,29 @@
 import os
 
 
-DBNAME=os.getenv('DBNAME')
-HOSTNAME=os.getenv('HOSTNAME')
-USER=os.getenv('USER')
-PASSWORD=os.getenv('PASSWORD')
-PORT=os.getenv('PORT')
+"""
+Database variables
+"""
 DATABASE_URL=os.getenv('DATABASE_URL')
+
+"""
+Email variables
+"""
+MAIL_SERVER=os.getenv('MAIL_SERVER')
+MAIL_PORT=os.getenv('MAIL_PORT')
+MAIL_USE_TLS=os.getenv('MAIL_USE_TLS')
+MAIL_USE_SSL=os.getenv('MAIL_USE_SSL')
+MAIL_USERNAME=os.getenv('MAIL_USERNAME')
+MAIL_PASSWORD=os.getenv('MAIL_PASSWORD')
+
+"""
+JWT variables
+"""
+JWT_SECRET_KEY=os.getenv('SECRET_KEY')
+
+
+"""
+Environment variables
+"""
+ENVIRONMENT=os.getenv('ENVIRONMENT')
 

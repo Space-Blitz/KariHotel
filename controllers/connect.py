@@ -1,9 +1,11 @@
 import psycopg2
 import psycopg2.extras
 from flask import jsonify, abort
-
+from flask_jwt_extended import create_access_token
+import datetime
 import time
 
+from controllers.extensions import mail
 from models.constants import DATABASE_URL
 
 
@@ -31,32 +33,41 @@ class Database():
         sql_command = """
             CREATE TABLE IF NOT EXISTS users(
                 user_id SERIAL PRIMARY KEY,
-                username VARCHAR (250) NOT NULL UNIQUE,
+                surname VARCHAR (250) NOT NULL,
+                othernames VARCHAR (250) NOT NULL,
                 email VARCHAR (250) NOT NULL UNIQUE,
-                contact VARCHAR (250) NOT NULL,
+                contact VARCHAR (250) NOT NULL UNIQUE,
                 password VARCHAR (250) NOT NULL,
-                date_created TIMESTAMP NOT NULL,
+                date_created TIMESTAMP NULL,
                 admin BOOLEAN NOT NULL DEFAULT FALSE
             );
-            CREATE TABLE IF NOT EXISTS parcels(
-                parcel_id SERIAL PRIMARY KEY,
+            CREATE TABLE IF NOT EXISTS bookings(
+                booking_id SERIAL PRIMARY KEY,
                 user_id INT NOT NULL,
-                parcel_description VARCHAR (50) NOT NULL,
-                weight_kgs FLOAT NULL,
+                type_id FLOAT NOT NULL,
+                type_name VARCHAR (50) NOT NULL,
                 price INT NULL,
-                recipient VARCHAR (250) NOT NULL,
-                recipient_contact VARCHAR (250) NOT NULL,
-                pickup_location VARCHAR (250) NOT NULL,
-                current_location VARCHAR (250) NULL,
-                destination VARCHAR (250) NOT NULL,
-                status varchar(25) check (status in ('pending', 'delivered', 'in transit', 'canceled')) DEFAULT 'pending',
-                date_created TIMESTAMP,
-                date_to_be_delivered TIMESTAMP
+                rooms INT NOT NULL,
+                total VARCHAR (250) NOT NULL,
+                time TIMESTAMP NOT NULL,
+                date_booked_for TIMESTAMP NOT NULL,
+                payment_type varchar(25) check (payment_type in ('cash', 'bank transfer/visa')) DEFAULT 'pending',
+                payment_status varchar(25) check (payment_status in ('pending', 'complete', 'canceled')) DEFAULT 'pending',
+                payment_id VARCHAR (250) NULL,
+                filled_status varchar(25) check (filled_status in ('pending', 'utilized', 'canceled')) DEFAULT 'pending'
             );
-            CREATE TABLE IF NOT EXISTS weight_categories(
-                weight_id SERIAL PRIMARY KEY,
-                weight_kgs NUMRANGE NOT NULL UNIQUE,
-                price INT NOT NULL UNIQUE
+            CREATE TABLE IF NOT EXISTS room_categories(
+                room_id SERIAL PRIMARY KEY,
+                number INT NOT NULL,
+                price INT NOT NULL,
+                name VARCHAR (250) NOT NULL,
+                time TIMESTAMP NOT NULL,
+                description VARCHAR (250) NOT NULL
+            );
+            CREATE TABLE IF NOT EXISTS payments(
+                payment_id SERIAL PRIMARY KEY,
+                time INT NOT NULL,
+                amount INT NOT NULL
             );
 		"""
         self.cursor.execute(sql_command)
@@ -71,23 +82,14 @@ class Database():
         returns:n/a
         """
         sql_command = """
-        INSERT INTO weight_categories (price, weight_kgs)
-        VALUES (2000,'[0, 0.1)'),
-               (3000,'[0.1, 0.5)'),
-               (6000,'[0.5, 1)'),
-               (10000,'[1, 2)'),
-               (15000,'[2, 5)'),
-               (20000,'[5, 10)'),
-               (25000,'[10, 20)'),
-               (30000,'[20, 30)'),
-               (40000,'[30, 50)'),
-               (70000,'[50, 100)'),
-               (100000,'[100, 200)'),
-               (200000,'[200, 500)'),
-               (700000,'[500, 1000)');
+        INSERT INTO room_categories (number, price, name,  time, description)
+        VALUES (40, 40000, 'Master Suite', now(), 'Spacious self contained room with double bed, Satelite TV, state of the art washrooms, 24/7 room service, breakfast included.'),
+               (3, 60000, 'Presidential Suite', now(), 'Mini Gym within highly spacious self contained room with double bed, Satelite TV, state of the art washrooms, 24/7 room service, breakfast included.'),
+               (200, 1000, 'Normal Suite', now(), 'Self contained room with single bed, Satelite TV, breakfast included.'),
+               (100, 3000, 'Couple Suite', now(), 'Self contained room with double bed, Satelite TV, breakfast included.');
         """
         sql_command1="""
-        SELECT EXISTS(SELECT TRUE FROM weight_categories WHERE price=3000);
+        SELECT EXISTS(SELECT TRUE FROM room_categories limit 1);
         """
         self.populate_default_data(sql_command1,sql_command)
     
@@ -108,10 +110,10 @@ class Database():
         returns:n/a
         """
         sql_command = """
-        INSERT INTO users (username,email,contact,password,date_created,admin) 
-        values ('Admin1','i-sendit@gmail.com','07888392838','doNot2114',now(),'t');
-        INSERT INTO users (username,email,contact,password,date_created,admin) 
-        values ('TestUser','meKendit@gmail.com','07888392838','ddwoNot2114',now(),'f');
+        INSERT INTO users (surname,othernames,email,contact,password,date_created,admin) 
+        values ('Admin1','Saed','i-sendit@gmail.com','07888392838','doNot2114',now(),'t');
+        INSERT INTO users (surname,othernames,email,contact,password,date_created,admin) 
+        values ('Test','User','meKendit@gmail.com','0788892838','ddwoNot2114',now(),'f');
         """
         sql_command1 = """
         SELECT EXISTS(SELECT TRUE FROM users where admin='true');
@@ -129,25 +131,65 @@ class Database():
 
         return rows_returned
 
-    def get_from_users(self, column, username):
+    def get_from_users(self, column, email, extra_params=''):
         """
         Get column from users table
         params:column name, username
         returns:password
         """
         sql_command="""
-        SELECT {column} FROM users where username='{username}';
-        """.format(username=username, column=column)
+        SELECT {column} FROM users where email='{email}' {extra_params};
+        """.format(email=email, column=column, extra_params=extra_params)
         db_value = self.execute_query(sql_command)
         if not db_value:
             abort(400, description="Invalid username or password.")
-        return db_value[0][column]
+        return db_value[0]
     
+
+    def validate_user_login(self,email,password):
+        """
+        Check if password password is equal to password in database
+        """
+        user = self.get_from_users('password,surname,email,contact,admin',email,"and password = '"+password+"'")
+        access_token = create_access_token(
+            identity={
+            'surname':user.get('surname'),
+            'email':user.get('email'),
+            'contact':user.get('contact')
+            },
+            expires_delta=datetime.timedelta(days=4000)
+        )
+        # print(db_password.get('password'))
+        return access_token
+    
+    # select to_char(date_created::timestamp, 'DD Mon YYYY HH:MI:SSPM') from users
+    def signup(self,email,password,surname, othernames, contact):
+        """
+        Check if password password is equal to password in database
+        """
+        insert_query="""
+        INSERT INTO users (surname,othernames,email,contact,password,date_created,admin) 
+        values ('{surname}','{othernames}','{email}','{contact}','{password}',now(),'f');\
+        """.format(
+            email=email,
+            password=password,
+            surname=surname,
+            othernames=othernames,
+            contact=contact
+        )
+        
+        try:
+            user = self.cursor.execute(insert_query)
+            return True
+        except Exception as identifier:
+            print(str(identifier))
+            abort(400,description="user already exists")
+
 
     # def create_usersaP
 
     def my_func(say):
         time.sleep(10)
-        print("Process finished",say )
+        print("Process finished",say, mans.mans )
 
 db = Database()

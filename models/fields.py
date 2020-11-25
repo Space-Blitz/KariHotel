@@ -1,2 +1,2 @@
 LOGIN=['email','password']
-REGISTER=['phone', 'first_name', 'last_name','email']
+REGISTER=['contact', 'surname', 'othernames','email']

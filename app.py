@@ -1,22 +1,22 @@
-import os
 import flask
 from flask import jsonify
 from flask_cors import CORS
 from flask_jwt_extended import JWTManager
+from controllers.extensions import mail
 
+from models.constants import ENVIRONMENT
+from config import app_config
 from views.auth import auth
 from views.payments import payment
 
 
-bucket = os.getenv("COUCHBASE_BUCKET")
 
 app = flask.Flask(__name__)
 CORS(app)
 
-app.config["JWT_SECRET_KEY"] = os.getenv('SECRET_KEY')
-app.config['DEBUG']=True
-app.config['ENVIRONMENT']= 'Development'
+app.config.from_object(app_config[ENVIRONMENT])
 jwt = JWTManager(app)
+mail = mail.init_app(app)
 
 app.register_blueprint(auth)
 app.register_blueprint(payment)
