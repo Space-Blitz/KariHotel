@@ -2,7 +2,6 @@ import flask
 from flask import jsonify
 from flask_cors import CORS
 from flask_jwt_extended import JWTManager
-from controllers.extensions import mail
 
 from models.constants import ENVIRONMENT
 from config import app_config
@@ -16,7 +15,6 @@ CORS(app)
 
 app.config.from_object(app_config[ENVIRONMENT])
 jwt = JWTManager(app)
-mail = mail.init_app(app)
 
 app.register_blueprint(auth)
 app.register_blueprint(payment)
