@@ -205,7 +205,7 @@ class Database():
         """
         try:
             update_query="""
-            update users set is_active='t' where email = '{email}' and is_active='f' returning surname
+            update users set is_active='t' where email = '{email}' and is_active='f'
             """.format(
                 email=email
             )#sql query for inserting new users
