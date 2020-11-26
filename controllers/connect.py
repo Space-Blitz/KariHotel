@@ -2,10 +2,11 @@ import psycopg2
 import psycopg2.extras
 from flask import jsonify, abort
 from flask_jwt_extended import create_access_token
+
+from multiprocessing import Process
 import datetime
 import time
 
-from controllers.extensions import mail
 from models.constants import DATABASE_URL
 
 
@@ -13,6 +14,7 @@ class Database():
     """
     Handle database connections
     """
+
     
     def __init__(self):
         """
@@ -39,7 +41,8 @@ class Database():
                 contact VARCHAR (250) NOT NULL UNIQUE,
                 password VARCHAR (250) NOT NULL,
                 date_created TIMESTAMP NULL,
-                admin BOOLEAN NOT NULL DEFAULT FALSE
+                admin BOOLEAN NOT NULL DEFAULT FALSE,
+                is_active BOOLEAN NOT NULL DEFAULT FALSE
             );
             CREATE TABLE IF NOT EXISTS bookings(
                 booking_id SERIAL PRIMARY KEY,
@@ -157,7 +160,7 @@ class Database():
             'email':user.get('email'),
             'contact':user.get('contact')
             },
-            expires_delta=datetime.timedelta(days=4000)
+            expires_delta=datetime.timedelta(days=40)
         )
         # print(db_password.get('password'))
         return access_token
@@ -176,20 +179,41 @@ class Database():
             surname=surname,
             othernames=othernames,
             contact=contact
-        )
+        )#sql query for inserting new users
         
         try:
-            user = self.cursor.execute(insert_query)
+            self.cursor.execute(insert_query)
+            token = create_access_token(
+            identity={
+            'surname':surname,
+            'email':email,
+            'contact':contact,
+            'activation':True
+            },
+            expires_delta=datetime.timedelta(days=4000)
+            )
+            return token
+        except Exception as identifier:
+            print(str(identifier))
+
+            abort(400,description="user already exists")#aborts in case user email or contact already exists
+        
+    
+    def activate_user(self,email):
+        """
+        Check if password password is equal to password in database
+        """
+        try:
+            update_query="""
+            update users set is_active='t' where email = '{email}' and is_active='f' returning surname
+            """.format(
+                email=email
+            )#sql query for inserting new users
+            self.cursor.execute(update_query)
             return True
         except Exception as identifier:
             print(str(identifier))
-            abort(400,description="user already exists")
+            abort(400,description="Invalid token activation.")#aborts in case user activation fails.
 
-
-    # def create_usersaP
-
-    def my_func(say):
-        time.sleep(10)
-        print("Process finished",say, mans.mans )
 
 db = Database()

@@ -17,6 +17,11 @@ MAIL_USERNAME=os.getenv('MAIL_USERNAME')
 MAIL_PASSWORD=os.getenv('MAIL_PASSWORD')
 
 """
+Redirect urls
+"""
+REDIRECT_URL=os.getenv('REDIRECT_URL')
+
+"""
 JWT variables
 """
 JWT_SECRET_KEY=os.getenv('SECRET_KEY')
