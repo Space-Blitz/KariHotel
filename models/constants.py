@@ -32,3 +32,11 @@ Environment variables
 """
 ENVIRONMENT=os.getenv('ENVIRONMENT')
 
+"""
+Frontend url
+"""
+FRONTEND_URL=os.getenv('FRONTEND_URL')
+
+"""
+FLUTTERWAVE KEY
+"""
