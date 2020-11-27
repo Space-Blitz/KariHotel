@@ -4,11 +4,11 @@ from flask_jwt_extended import (
     create_access_token,
     decode_token
 )
-from flask import Blueprint, Response, request, jsonify, abort
+from flask import Blueprint, Response, request, jsonify, abort, redirect
 
 import time
 
-
+from models.constants import FRONTEND_URL
 from models.fields import LOGIN, REGISTER
 from controllers.validator import check_for_required_values
 from controllers.connect import db
@@ -72,7 +72,8 @@ def activate_email(token):
                 args=[email,surname,],
                 daemon=True
             ).start()
-            return jsonify({'message':'Successful Activation. Please login'}), 200
+            print(FRONTEND_URL)
+            return redirect(FRONTEND_URL)
         abort(400, description="invalid activation token.")
 
     except Exception as identifier:
