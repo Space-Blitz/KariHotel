@@ -23,6 +23,18 @@ def submit_mobile_money_payment():
     redirect=db.insertPayment(data)
     return jsonify({'message':'Payment Initiated', 'url':redirect}), 200
 
+@payment.route('/api/v1/payment/webhook', methods=['POST'])
+def mobile_money_webhook(type_id):
+    """
+    Make any paymnets
+    returns: user data
+    """
+    data = request.get_json()
+    print(data)
+    # check_for_required_values(data, MM_PAYMENTS)
+    # rows= db.get_transactions()
+    return jsonify({'message':'Successful.'}), 200
+
 
 @payment.route('/api/v1/transactions', methods=['GET'])
 @jwt_required
@@ -68,6 +80,7 @@ def edit_accomodation_type(type_id):
     check_for_required_values(data, MM_PAYMENTS)
     rows= db.get_transactions()
     return jsonify({'message':'Successful registration. Please login'}), 200
+
 
 
 
