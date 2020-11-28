@@ -30,7 +30,7 @@ def login():
     data = request.get_json()
     check_for_required_values(data, LOGIN)
     access_token = db.validate_user_login(data.get('email'),data.get('password'))
-    return jsonify({'message':'Successful login.','token':access_token}), 200
+    return jsonify({'message':'Successful login.','user':access_token}), 200
 
 
 @auth.route('/api/v1/auth/register', methods=['POST'])
@@ -107,6 +107,4 @@ def logout():
     unique_identifier = get_raw_jwt()['jti']
     blacklist.add(unique_identifier)
     return response, 200
-
-
 
