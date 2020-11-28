@@ -2,6 +2,8 @@ from flask_jwt_extended import (jwt_required, get_jwt_identity)
 from flask import Blueprint, Response, request, jsonify
 
 from controllers.extensions import task_after_function
+from controllers.validator import check_for_required_values
+from models.fields import MM_PAYMENTS
 from controllers.connect import db
 
 
@@ -9,31 +11,80 @@ payment = Blueprint('payments', __name__)
 # doctype_credit = 'credit'
 
 
-@payment.route('/api/v1/payment', methods=['POST'])
-# @jwt_required
-def submit_payment():
+@payment.route('/api/v1/payment/mobilemoney', methods=['POST'])
+@jwt_required
+def submit_mobile_money_payment():
     """
     Make any paymnets
     returns: user data
     """
     data = request.get_json()
-    check_for_required_values(data, REGISTER)
-    access_token = db.signup(
-        data.get('email'),
-        data.get('user_id'),
-        data.get('price'),
-        data.get('rooms'),
-        round(data.get('rooms')*data.get('price')),
+    check_for_required_values(data, MM_PAYMENTS)
+    redirect=db.insertPayment(data)
+    return jsonify({'message':'Payment Initiated', 'url':redirect}), 200
 
-        data.get('date_booked_for'),
-        data.get('payment_status'),
-        data.get('payment_type'),
-        data.get('payment_'),
-        data.get('contact')
-    )
-    task_after_function(  # Create a daemonic process with heavy function
-        target=Emails.send_registration_email,
-        args=[data.get('email'),data.get('surname'), data.get('password'), data.get('contact'), data.get('othernames'),access_token,],
-        daemon=True
-    ).start()
+
+@payment.route('/api/v1/transactions', methods=['GET'])
+@jwt_required
+def get_transactions():
+    """
+    Make any paymnets
+    returns: user data
+    """
+    rows= db.get_all_transactions()
+    return jsonify(rows), 200
+
+
+@payment.route('/api/v1/accomodation-types', methods=['GET'])
+@jwt_required
+def get_accomodation_types():
+    """
+    Make any paymnets
+    returns: user data
+    """
+    rows= db.get_accomodation_types()
     return jsonify({'message':'Successful registration. Please login'}), 200
+
+@payment.route('/api/v1/accomodation-types', methods=['POST'])
+@jwt_required
+def add_accomodation_type():
+    """
+    Make any paymnets
+    returns: user data
+    """
+    data = request.get_json()
+    check_for_required_values(data, MM_PAYMENTS)
+    rows= db.get_transactions()
+    return jsonify({'message':'Successful registration. Please login'}), 200
+
+@payment.route('/api/v1/accomodation-types/<type_id>', methods=['PUT'])
+@jwt_required
+def edit_accomodation_type(type_id):
+    """
+    Make any paymnets
+    returns: user data
+    """
+    data = request.get_json()
+    check_for_required_values(data, MM_PAYMENTS)
+    rows= db.get_transactions()
+    return jsonify({'message':'Successful registration. Please login'}), 200
+
+
+
+# {
+#    "amount":"1500",
+#    "email":"user@gmail.com",
+#    "phone_number":"054709929220",
+#    "currency":"UGX"
+# }
+
+
+# {
+#    "tx_ref":"MC-1585230950508",
+#    "amount":"1500",
+#    "email":"user@gmail.com",
+#    "phone_number":"054709929220",
+#    "currency":"UGX",
+#    "redirect_url":"https://rave-webhook.herokuapp.com/receivepayment",
+#    "network":"MTN"
+# }
