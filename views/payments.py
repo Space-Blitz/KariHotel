@@ -24,7 +24,7 @@ def submit_mobile_money_payment():
     return jsonify({'message':'Payment Initiated', 'url':redirect}), 200
 
 @payment.route('/api/v1/payment/webhook', methods=['POST'])
-def mobile_money_webhook(type_id):
+def mobile_money_webhook():
     """
     Make any paymnets
     returns: user data
