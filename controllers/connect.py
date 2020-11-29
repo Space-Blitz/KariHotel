@@ -6,11 +6,12 @@ from flask import jsonify, abort
 from flask_jwt_extended import create_access_token, get_jwt_identity
 
 
-from multiprocessing import Process
+
 import datetime
 import time
 from  uuid import uuid4
 
+from controllers.extensions import task_after_function
 from models.constants import DATABASE_URL, MM_URL, FL_KEY, FRONTEND_URL
 
 currency = 'UGX'
@@ -28,6 +29,12 @@ class Database():
         connection.autocommit = True
         self.cursor = connection.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
         self.create_tables()
+    
+    def __del__(self): 
+        """
+        Close database connection
+        """
+        self.cursor.close()
 
 
     def create_tables(self):
@@ -59,7 +66,7 @@ class Database():
                 time TIMESTAMP NOT NULL,
                 date_booked_for TIMESTAMP NOT NULL,
                 payment_type varchar(25) check (payment_type in ('cash on arrival', 'bank transfer/visa', 'mobile money')) DEFAULT 'cash on arrival',
-                payment_status varchar(25) check (payment_status in ('pending', 'complete', 'canceled')) DEFAULT 'pending',
+                payment_status varchar(25) check (payment_status in ('pending', 'successful', 'failed','expired')) DEFAULT 'pending',
                 payment_id VARCHAR (250) NULL,
                 filled_status varchar(25) check (filled_status in ('pending', 'utilized', 'canceled')) DEFAULT 'pending'
             );
@@ -274,7 +281,11 @@ class Database():
         try:
             data['redirect_url']= FRONTEND_URL+'/transactions'
             response = requests.post(url=MM_URL,data=data, headers={'Authorization': 'Bearer '+FL_KEY})
-            self.cursor.execute(insert_query)
+            task_after_function(
+                target=Database.execute_after_request,
+                args=insert_query,
+                daemon=True
+            ).start()
             return (response.json())['meta']['authorization']['redirect']
         except Exception as identifier:
             print(str(identifier))
@@ -300,5 +311,43 @@ class Database():
         if not is_admin:
             transactions_query+=" where user_id='{user_id}'".format(user_id=user_id)
         return self.execute_query(transactions_query)
+
+    @staticmethod# so that ts callable without initializing the class
+    def update_payment(status,payment_id):
+        """Update payment
+        """
+        try:
+            update_query="""update bookings set payment_status='{status}'
+            where payment_id = '{payment_id}' and payment_status!='successful'
+            """.format(
+                status=status,
+                payment_id=payment_id
+            )  
+            execution=Database()
+            execution.cursor.execute(update_query)
+            print('successful')
+        except Exception as error:
+            print('failed to udpate transaction\n')
+            print(str(error))
+        
+    
+    @staticmethod# so that ts callable without initializing the class
+    def execute_after_request(query):
+        """
+        executes query after request response is returned.
+        The function also logs any issues that may occur during execution
+        params: 
+            :query (str): query that will be run
+        returns:
+            :None
+        """
+        try:
+            connection = Database()
+            execution = connection.cursor.execute(query)
+            print('successful execution after request')
+        except Exception as error:
+            print('Error on execution after request\n',str(error))
+
+
 
 db = Database()

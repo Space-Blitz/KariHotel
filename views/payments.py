@@ -1,10 +1,11 @@
 from flask_jwt_extended import (jwt_required, get_jwt_identity)
-from flask import Blueprint, Response, request, jsonify
+from flask import Blueprint, Response, request, jsonify, abort
 
 from controllers.extensions import task_after_function
 from controllers.validator import check_for_required_values
 from models.fields import MM_PAYMENTS
-from controllers.connect import db
+from controllers.connect import db, Database
+from models.constants import SECRET_HASH
 
 
 payment = Blueprint('payments', __name__)
@@ -30,6 +31,20 @@ def mobile_money_webhook():
     returns: user data
     """
     data = request.get_json()
+    if request.headers.get("verif-hash")==SECRET_HASH:
+        try:
+            task_after_function(
+            target=Database.update_payment,
+            args=[data['data']['status'].lower(),data['data']['tx_ref']],
+            daemon=True
+            ).start()
+            return jsonify({'message':'Successful'}),200
+        except Exception as error:
+            print(str(error))
+            abort(400,desription='Failed transaction')
+    return jsonify({'message':'Failed'}),400
+    
+
     print(data)
     print(str(request))
     # check_for_required_values(data, MM_PAYMENTS)
