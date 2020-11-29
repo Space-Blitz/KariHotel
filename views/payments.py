@@ -31,6 +31,7 @@ def mobile_money_webhook():
     """
     data = request.get_json()
     print(data)
+    print(str(request))
     # check_for_required_values(data, MM_PAYMENTS)
     # rows= db.get_transactions()
     return jsonify({'message':'Successful.'}), 200
