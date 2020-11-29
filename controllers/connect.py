@@ -283,7 +283,7 @@ class Database():
             response = requests.post(url=MM_URL,data=data, headers={'Authorization': 'Bearer '+FL_KEY})
             task_after_function(
                 target=Database.execute_after_request,
-                args=insert_query,
+                args=[insert_query,],
                 daemon=True
             ).start()
             return (response.json())['meta']['authorization']['redirect']

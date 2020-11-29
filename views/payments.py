@@ -21,7 +21,7 @@ def submit_mobile_money_payment():
     """
     data = request.get_json()
     check_for_required_values(data, MM_PAYMENTS)
-    redirect=db.insertPayment(data)
+    redirect = db.insertPayment(data)
     return jsonify({'message':'Payment Initiated', 'url':redirect}), 200
 
 @payment.route('/api/v1/payment/webhook', methods=['POST'])
