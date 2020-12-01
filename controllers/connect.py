@@ -280,17 +280,20 @@ class Database():
         
         try:
             data['redirect_url']= FRONTEND_URL+'/transactions'
+            print(MM_URL)
+            print(data['redirect_url'])
             response = requests.post(url=MM_URL,data=data, headers={'Authorization': 'Bearer '+FL_KEY})
             task_after_function(
                 target=Database.execute_after_request,
                 args=[insert_query,],
                 daemon=True
             ).start()
+
             return (response.json())['meta']['authorization']['redirect']
         except Exception as identifier:
             print(str(identifier))
 
-            abort(400,description="user already exists")#aborts in case user email or contact already exists
+            abort(400,description=str(identifier))#aborts in case user email or contact already exists
         
     
     
