@@ -2,7 +2,8 @@ from flask_jwt_extended import (
     jwt_required, 
     get_jwt_identity,
     create_access_token,
-    decode_token
+    decode_token,
+    get_raw_jwt
 )
 from flask import Blueprint, Response, request, jsonify, abort, redirect
 

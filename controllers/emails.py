@@ -13,13 +13,18 @@ class Emails:
         mail_content ="""
         <h1>{surname}, Kari Hotel welcomes you!</h1>
         <h2>Enjoy best in class accomodation at Kari Hotel Uganda.</h2>
-        <h2>Feel free to book on our <a href="{url}/api/v1/auth/register/{token}/activate">website</a></h2>
+        <h2>.</h2>
+
+        <h1>Activate your account on this link <a href="{url}/api/v1/auth/register/{token}/activate">website</a></h1>
         <h3>If you cannot view the link above Copy & paste this in your browser</h3>
         <p><b>{url}/api/v1/auth/register/{token}/activate</b></p>
+        <p>Your password is: <span>{password}</span> </p>
+        
         """.format(
             surname=surname,
             token=token,
-            url=REDIRECT_URL
+            url=REDIRECT_URL,
+            password=password
         )
         Emails.send_email(mail_content, 'html', email, 'KARI HOTEL WELCOMES YOU.')
         
@@ -27,7 +32,6 @@ class Emails:
         #The mail addresses and password
         sender_address = MAIL_USERNAME
         sender_pass = MAIL_PASSWORD
-        receiver_address = 'patrickf1290@gmail.com'
         #Setup the MIME
         message = MIMEMultipart()
         message['From'] = sender_address
@@ -61,13 +65,13 @@ class Emails:
         #The mail addresses and password
     
 
-    def send_purchase_email(email, surname, password, contact, othernames):
+    def send_purchase_email(email):
         """
         Send email on sign up
         params: email, surname, password, contact, othernames,
         """
         mail_content ="""
-        <h1>{surname}, Kari Hotel welcomes you!</h1>
+        <h1>Successful transaction!</h1>
         <p>Enjoy best in class accomodation at Kari Hotel Uganda.</p>
         <p>Feel free to book on our website<a href="https://kari-hotel.web.app/">website</a></p>
         <p>If you cannot view the link above Copy & paste this in your browser</p>
@@ -76,22 +80,5 @@ class Emails:
             surname=surname
         )
         
-        #The mail addresses and password
-        sender_address = MAIL_USERNAME
-        sender_pass = MAIL_PASSWORD
-        receiver_address = 'patrickf1290@gmail.com'
-        #Setup the MIME
-        message = MIMEMultipart()
-        message['From'] = sender_address
-        message['To'] = receiver_address
-        message['Subject'] = 'KARI HOTEL WELCOMES YOU.'   #The subject line
-        #The body and the attachments for the mail
-        message.attach(MIMEText(mail_content, 'html'))
-        #Create SMTP session for sending the mail
-        session = smtplib.SMTP(MAIL_SERVER, MAIL_PORT) #use gmail with port
-        session.starttls() #enable security
-        session.login(sender_address, sender_pass) #login with mail_id and password
-        text = message.as_string()
-        session.sendmail(sender_address, receiver_address, text)
-        session.quit()
+        Emails.send_email(mail_content, 'html', email, 'KARI HOTEL - SUCCESSFUL PAYMENT.')
 
