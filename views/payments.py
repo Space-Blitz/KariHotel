@@ -20,7 +20,6 @@ def submit_mobile_money_payment():
     returns: user data
     """
     data = request.get_json()
-    print(data)
     check_for_required_values(data, MM_PAYMENTS)
     redirect = db.insertPayment(data)
     return jsonify({'message':'Payment Initiated', 'url':redirect}), 200
@@ -33,6 +32,7 @@ def mobile_money_webhook():
     """
     data = request.get_json()
     if request.headers.get("verif-hash")==SECRET_HASH:
+        print(data)
         try:
             if data['data']['status'].lower()=='successful':
                 task_after_function(

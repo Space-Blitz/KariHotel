@@ -64,6 +64,9 @@ class Database():
                 price INT NULL,
                 rooms INT NOT NULL,
                 total VARCHAR (250) NOT NULL,
+                email varchar(250) not null,
+                name varchar(250) not null,
+                contact varchar(250) not null,
                 time TIMESTAMP NOT NULL,
                 date_booked_for TIMESTAMP NOT NULL,
                 payment_type varchar(25) check (payment_type in ('cash on arrival', 'bank transfer/visa', 'mobile money')) DEFAULT 'cash on arrival',
@@ -252,20 +255,22 @@ class Database():
         amount =data['amount']= int(data.get('price'))*int(data.get('rooms'))
         rooms = data.get('rooms')
         price= data.get('price')
+        name=data['fullname']= data.get('name')
         date_booked_for = data.get('date_booked_for')
         phone_number = data.get('phone_number')
         payment_id = data['tx_ref']='mobilemoney_'+str(uuid4()).replace('-', '')
         print(amount)
         
         insert_query="""
-        INSERT INTO bookings (user_id, type_id, type_name, price, rooms, total, time, date_booked_for, payment_type,  payment_id) 
-        values ('{user_id}','{type_id}','{type_name}','{price}','{rooms}','{amount}',now(),'{date_booked_for}','mobile money','{payment_id}');
+        INSERT INTO bookings (user_id, type_id, type_name, price, rooms,email, contact, name, total, time, date_booked_for, payment_type,  payment_id) 
+        values ('{user_id}','{type_id}','{type_name}','{price}','{rooms}','{email}','{phone_number}','{name}','{amount}',now(),'{date_booked_for}','mobile money','{payment_id}');
         INSERT INTO mobile_payments (amount, price, tx_ref,user_id,phone_number, time ) 
         values ('{amount}','{price}','{payment_id}','{user_id}','{phone_number}',now());
         """.format(
             amount=amount,
             user_id=user_id,
             email=email,
+            name=name,
             type_id=type_id,
             type_name=type_name, 
             rooms=rooms,
