@@ -36,6 +36,7 @@ def resource_not_found(e):
     return jsonify(error=str(e)), 404
 
 @app.errorhandler(400)
+@app.errorhandler(401)
 def bad_request(e):
     return jsonify(error=str(e.description)), 400
 

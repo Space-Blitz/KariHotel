@@ -11,6 +11,7 @@ import datetime
 import time
 from  uuid import uuid4
 
+from controllers.emails import Emails
 from controllers.extensions import task_after_function
 from models.constants import DATABASE_URL, MM_URL, FL_KEY, FRONTEND_URL
 
@@ -76,7 +77,8 @@ class Database():
                 price INT NOT NULL,
                 name VARCHAR (250) NOT NULL,
                 time TIMESTAMP NOT NULL,
-                description VARCHAR (250) NOT NULL
+                description VARCHAR (250) NOT NULL,
+                room_url VARCHAR (250) NOT NULL
             );
             CREATE TABLE IF NOT EXISTS mobile_payments(
                 id SERIAL PRIMARY KEY,
@@ -86,11 +88,6 @@ class Database():
                 tx_ref VARCHAR (250) NOT NULL unique,
                 phone_number VARCHAR (250) NOT NULL,
                 time TIMESTAMP NOT NULL
-            );
-            CREATE TABLE IF NOT EXISTS payments(
-                payment_id SERIAL PRIMARY KEY,
-                time INT NOT NULL,
-                amount INT NOT NULL
             );
 		"""
         self.cursor.execute(sql_command)
@@ -105,11 +102,11 @@ class Database():
         returns:n/a
         """
         sql_command = """
-        INSERT INTO room_categories (number, price, name,  time, description)
-        VALUES (40, 40000, 'Master Suite', now(), 'Spacious self contained room with double bed, Satelite TV, state of the art washrooms, 24/7 room service, breakfast included.'),
-               (3, 60000, 'Presidential Suite', now(), 'Mini Gym within highly spacious self contained room with double bed, Satelite TV, state of the art washrooms, 24/7 room service, breakfast included.'),
-               (200, 1000, 'Normal Suite', now(), 'Self contained room with single bed, Satelite TV, breakfast included.'),
-               (100, 3000, 'Couple Suite', now(), 'Self contained room with double bed, Satelite TV, breakfast included.');
+        INSERT INTO room_categories (number, price, name,  time, description, room_url)
+        VALUES (40, 40000, 'Master Suite', now(), 'Spacious self contained room with double bed, Satelite TV, state of the art washrooms, 24/7 room service, breakfast included.', 'https://drive.google.com/uc?export=view&id=1ulWMbY04h1zwx4X9hekAonm60RDcux00'),
+               (3, 60000, 'Presidential Suite', now(), 'Mini Gym within highly spacious self contained room with double bed, Satelite TV, state of the art washrooms, 24/7 room service, breakfast included.','https://drive.google.com/uc?export=view&id=1gIqDMudg670RT72n_-XnIcKNSF_GBGay'),
+               (200, 1000, 'Normal Suite', now(), 'Self contained room with single bed, Satelite TV, breakfast included.','https://drive.google.com/uc?export=view&id=1yPBKJ5hypHjFU15m6AVO9KlBDSodCDfX'),
+               (100, 3000, 'Couple Suite', now(), 'Self contained room with double bed, Satelite TV, breakfast included.','https://drive.google.com/uc?export=view&id=1BQ0OOR2cBtuujdTiNdUAR0UunoOWjvsu');
         """
         sql_command1="""
         SELECT EXISTS(SELECT TRUE FROM room_categories limit 1);
@@ -133,10 +130,10 @@ class Database():
         returns:n/a
         """
         sql_command = """
-        INSERT INTO users (surname,othernames,email,contact,password,date_created,admin) 
-        values ('Admin1','Saed','i-sendit@gmail.com','07888392838','doNot2114',now(),'t');
-        INSERT INTO users (surname,othernames,email,contact,password,date_created,admin) 
-        values ('Test','User','meKendit@gmail.com','0788892838','ddwoNot2114',now(),'f');
+        INSERT INTO users (surname,othernames,email,contact,password,date_created,admin,is_active) 
+        values ('Admin1','Saed','i-sendit@gmail.com','07888392838','doNot2114',now(),'t', 't');
+        INSERT INTO users (surname,othernames,email,contact,password,date_created,admin, is_active) 
+        values ('Test','User','meKendit@gmail.com','0788892838','ddwoNot2114',now(),'f', 't');
         """
         sql_command1 = """
         SELECT EXISTS(SELECT TRUE FROM users where admin='true');
@@ -173,7 +170,7 @@ class Database():
         """
         Check if password password is equal to password in database
         """
-        user = self.get_from_users('user_id,password,surname,email,contact,admin',email,"and password = '"+password+"'")
+        user = self.get_from_users('user_id,password,surname,email,contact,admin',email,"and password = '"+password+"' and is_active=true")
         contact = user.get('contact')
         surname= user.get('surname')
         admin = user.get('admin')
@@ -188,7 +185,7 @@ class Database():
             expires_delta=datetime.timedelta(days=40)
         )
         # print(db_password.get('password'))
-        return {'token': access_token,'email':email,'username':surname,'contact': contact} 
+        return {'token': access_token,'email':email,'username':surname,'contact': contact, 'admin':admin} 
     
     # select to_char(date_created::timestamp, 'DD Mon YYYY HH:MI:SSPM') from users
     def signup(self,email,password,surname, othernames, contact):
@@ -252,13 +249,13 @@ class Database():
         email =data['email']= user_info.get('email')
         type_id = data.get('type_id')
         type_name = data.get('type_name')
-        amount =data['amount']= data.get('price')*data.get('rooms')
+        amount =data['amount']= int(data.get('price'))*int(data.get('rooms'))
         rooms = data.get('rooms')
         price= data.get('price')
         date_booked_for = data.get('date_booked_for')
         phone_number = data.get('phone_number')
         payment_id = data['tx_ref']='mobilemoney_'+str(uuid4()).replace('-', '')
-        
+        print(amount)
         
         insert_query="""
         INSERT INTO bookings (user_id, type_id, type_name, price, rooms, total, time, date_booked_for, payment_type,  payment_id) 
@@ -279,7 +276,7 @@ class Database():
         )#sql query for inserting new users
         
         try:
-            data['redirect_url']= FRONTEND_URL+'/transactions'
+            data['redirect_url']= FRONTEND_URL+'/success'
             print(MM_URL)
             print(data['redirect_url'])
             response = requests.post(url=MM_URL,data=data, headers={'Authorization': 'Bearer '+FL_KEY})
@@ -290,6 +287,7 @@ class Database():
             ).start()
 
             return (response.json())['meta']['authorization']['redirect']
+            # return insert_query
         except Exception as identifier:
             print(str(identifier))
 
@@ -306,14 +304,45 @@ class Database():
         is_admin = user_info.get('admin')
         transactions_query="""
         select users.surname||' ' || users.othernames as name, bookings.booking_id,
+        users.contact,
         bookings.date_booked_for, bookings.total, bookings.rooms, bookings.type_name,
         bookings.payment_status, bookings.filled_status, users.email
         from users join bookings on
         bookings.user_id=users.user_id
         """
         if not is_admin:
-            transactions_query+=" where user_id='{user_id}'".format(user_id=user_id)
+            transactions_query+=" and users.user_id='{user_id}'".format(user_id=user_id)
         return self.execute_query(transactions_query)
+
+
+    def get_accomodation_categories(self):
+        """
+        Get all user transactions
+        """
+        transactions_query="""
+        select room_categories.* from room_categories
+        """
+        return self.execute_query(transactions_query)
+
+
+
+    def get_bookings_stats(self):
+        """
+        Get booking stats for line chart
+        """
+        if (get_jwt_identity()).get('admin'):
+            stats_query="""
+            SELECT time::timestamp::date as date, 
+            cast(sum(total::decimal) as integer) as "money" 
+            FROM "bookings"
+            WHERE 
+            bookings.payment_status='successful'
+            GROUP BY time::timestamp::date
+            ORDER BY time::timestamp::date DESC
+            """
+            return self.execute_query(stats_query)
+        abort(401, description="unauthorized")
+        
 
     @staticmethod# so that ts callable without initializing the class
     def update_payment(status,payment_id):
@@ -322,13 +351,17 @@ class Database():
         try:
             update_query="""update bookings set payment_status='{status}'
             where payment_id = '{payment_id}' and payment_status!='successful'
+            returning bookings.email
             """.format(
                 status=status,
                 payment_id=payment_id
             )  
             execution=Database()
-            execution.cursor.execute(update_query)
-            print('successful')
+            user = execution.execute_query(update_query)[0]
+            email = user.get('email')
+            amount = user.get('amount')
+            print('successful update')
+            Emails.send_purchase_email(email,amount)
         except Exception as error:
             print('failed to udpate transaction\n')
             print(str(error))
