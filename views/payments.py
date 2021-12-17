@@ -44,7 +44,7 @@ def mobile_money_webhook():
             return jsonify({'message':'Successful'}),200
         except Exception as error:
             print(str(error))
-            abort(400,desription='Failed transaction')
+            abort(400,description='Failed transaction')
     return jsonify({'message':'Failed'}),400
     
 
